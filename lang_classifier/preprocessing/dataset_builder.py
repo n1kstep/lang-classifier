@@ -2,8 +2,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from lang_classifier.utils import smart_truncate
 import typer
-import yaml
 import random
+from lang_classifier.constants import LANGUAGES
 
 app = typer.Typer()
 
@@ -50,12 +50,8 @@ def build_dataset(
                                     help="Path to directory where to save loaded datasets"
                                     ),
 ):
-    with open(config_path, "r") as file:
-        config = yaml.load(file, Loader=yaml.FullLoader)
-
-    languages = config['languages']
     dfs = []
-    for lang in languages:
+    for lang in LANGUAGES:
         df = pd.read_csv(f"dataset/dataset_{lang}.csv", sep='\t').sample(samples_per_lang)
         dfs.append(df)
 
@@ -66,8 +62,8 @@ def build_dataset(
 
     train, val = train_test_split(merged_df, test_size=0.1, stratify=merged_df['label'])
     if do_multilabel:
-        train = build_multilabel_dataset(train, langs=languages)
-        val = build_multilabel_dataset(val, langs=languages)
+        train = build_multilabel_dataset(train, langs=LANGUAGES)
+        val = build_multilabel_dataset(val, langs=LANGUAGES)
 
     train.to_csv(f"{save_to}/train.csv", sep='\t', index=False)
     val.to_csv(f"{save_to}/val.csv", sep='\t', index=False)
