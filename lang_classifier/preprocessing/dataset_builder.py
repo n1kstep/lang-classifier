@@ -1,3 +1,6 @@
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+
 import random
 
 import pandas as pd
@@ -11,11 +14,11 @@ app = typer.Typer()
 
 
 def build_multilabel_dataset(
-    df: pd.DataFrame, langs: list, min_truncate: int = 32, max_seq_len: int = 512
+    dataset: pd.DataFrame, langs: list, min_truncate: int = 32, max_seq_len: int = 512
 ) -> pd.DataFrame:
     texts = []
     labels = {lang: [] for lang in langs}
-    for _, row in df.iterrows():
+    for _, row in dataset.iterrows():
         max_truncate = int(0.7 * len(row["text"]))
         ml_text = smart_truncate(
             row["text"],
@@ -27,7 +30,7 @@ def build_multilabel_dataset(
             vals.append(0)
         labels[row["label"]][-1] = 1
         for _ in range(random.randint(0, 5)):
-            another_row = df.sample()
+            another_row = dataset.sample()
             max_truncate = int(0.7 * len(another_row["text"].item()))
             another_text = smart_truncate(
                 another_row["text"].item(),
@@ -41,8 +44,8 @@ def build_multilabel_dataset(
 
         texts.append(ml_text)
 
-    res_df = pd.DataFrame({"text": texts, **labels})
-    return res_df
+    res_dataset = pd.DataFrame({"text": texts, **labels})
+    return res_dataset
 
 
 @app.command()

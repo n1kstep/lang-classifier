@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring
+
 import time
 
 from pynput.mouse import Button, Controller

@@ -1,3 +1,6 @@
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+
 def smart_truncate(content, length=512, suffix=""):
     if len(content) <= length:
         return content

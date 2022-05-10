@@ -1,3 +1,7 @@
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+# pylint: disable=too-many-locals
+
 import numpy as np
 import typer
 import yaml
@@ -45,7 +49,7 @@ def train(
         if do_multilabel
         else "single_label_classification",
     )
-    model.config.id2label = {ind: lang for ind, lang in enumerate(LANGUAGES)}
+    model.config.id2label = dict(enumerate(LANGUAGES))
     model.config.label2id = {lang: ind for ind, lang in enumerate(LANGUAGES)}
 
     def tokenize(batch):

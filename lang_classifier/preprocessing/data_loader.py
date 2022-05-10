@@ -1,3 +1,6 @@
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+
 from random import sample
 
 import pandas as pd

@@ -1,3 +1,6 @@
+# pylint: disable=missing-function-docstring
+# pylint: disable=missing-module-docstring
+
 import numpy as np
 import torch
 from sklearn.metrics import (accuracy_score, classification_report, f1_score,
@@ -7,9 +10,9 @@ from transformers import EvalPrediction
 from lang_classifier.constants.constants import LANGUAGES
 
 
-def compute_metrics_multilabel(p: EvalPrediction):
-    preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
-    result = metrics_multilabel(predictions=preds, labels=p.label_ids)
+def compute_metrics_multilabel(output: EvalPrediction):
+    preds = output.predictions[0] if isinstance(output.predictions, tuple) else output.predictions
+    result = metrics_multilabel(predictions=preds, labels=output.label_ids)
     return result
 
 
