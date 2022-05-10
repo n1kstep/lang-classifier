@@ -1,49 +1,64 @@
-from datasets import load_dataset
-from transformers import AutoTokenizer
-from datasets import ClassLabel
-from transformers import AutoModelForSequenceClassification
-from transformers import TrainingArguments
 import numpy as np
-from transformers import Trainer
 import typer
-from lang_classifier.constants import LANGUAGES
+import yaml
+from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
+                          Trainer, TrainingArguments)
 
-from lang_classifier.metrics.metrics import compute_metrics_multilabel, compute_metrics
+from datasets import ClassLabel, load_dataset
+from lang_classifier.constants.constants import LANGUAGES, SEED
+from lang_classifier.metrics.metrics import (compute_metrics,
+                                             compute_metrics_multilabel)
 
 app = typer.Typer()
 
 
 @app.command()
 def train(
-        do_multilabel: str = typer.Option(False,
-                                          help="Do multilabel instead of multiclass classification"
-                                          ),
-        data_path: str = typer.Option(None,
-                                      help="Path to directory where train.csv and val.csv datasets located"
-                                      ),
-        save_to: str = typer.Option(None,
-                                    help="Path to directory where to save loaded datasets"
-                                    ),
+    config_path: str = typer.Option(
+        "../configs/loader_config.yaml",
+        help="Path to the config with training arguments",
+    ),
+    do_multilabel: str = typer.Option(
+        False, help="Do multilabel instead of multiclass classification"
+    ),
+    data_path: str = typer.Option(
+        None, help="Path to directory where train.csv and val.csv datasets located"
+    ),
+    save_to: str = typer.Option(
+        None, help="Path to directory where to save loaded datasets"
+    ),
 ):
-    class_labels = ClassLabel(num_classes=10, names=LANGUAGES)
-    dataset = load_dataset('csv',
-                           data_files={'train': data_path + "/train.csv", 'test': data_path + "/val.csv"},
-                           delimiter='\t'
-                           )
+    with open(config_path, "r", encoding='utf-8') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+
+    class_labels = ClassLabel(num_classes=len(LANGUAGES), names=LANGUAGES)
+    dataset = load_dataset(
+        "csv",
+        data_files={"train": data_path + "/train.csv", "test": data_path + "/val.csv"},
+        delimiter="\t",
+    )
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     model = AutoModelForSequenceClassification.from_pretrained(
         "xlm-roberta-base",
-        num_labels=10,
-        problem_type="multi_label_classification" if do_multilabel else "single_label_classification",
+        num_labels=len(LANGUAGES),
+        problem_type="multi_label_classification"
+        if do_multilabel
+        else "single_label_classification",
     )
+    model.config.id2label = {ind: lang for ind, lang in enumerate(LANGUAGES)}
+    model.config.label2id = {lang: ind for ind, lang in enumerate(LANGUAGES)}
 
     def tokenize(batch):
-        tokens = tokenizer(batch['text'], padding='max_length', truncation=True, max_length=128)
-        tokens['label'] = class_labels.str2int(batch['label'])
+        tokens = tokenizer(
+            batch["text"], padding="max_length", truncation=True, max_length=128
+        )
+        tokens["label"] = class_labels.str2int(batch["label"])
         return tokens
 
     def tokenize_multilabel(batch):
-        encoding = tokenizer(batch["text"], padding="max_length", truncation=True, max_length=128)
+        encoding = tokenizer(
+            batch["text"], padding="max_length", truncation=True, max_length=128
+        )
         labels_batch = {k: batch[k] for k in batch.keys() if k in LANGUAGES}
         labels_matrix = np.zeros((len(batch["text"]), len(LANGUAGES)))
         for idx, label in enumerate(LANGUAGES):
@@ -52,23 +67,24 @@ def train(
         encoding["labels"] = labels_matrix.tolist()
         return encoding
 
-    tokenized_datasets = dataset.map(tokenize_multilabel if do_multilabel else tokenize, batched=True)
-    train_dataset = tokenized_datasets["train"].shuffle(seed=42)
-    eval_dataset = tokenized_datasets["test"].shuffle(seed=42)
+    tokenized_datasets = dataset.map(
+        tokenize_multilabel if do_multilabel else tokenize, batched=True
+    )
+    train_dataset = tokenized_datasets["train"].shuffle(seed=SEED)
+    eval_dataset = tokenized_datasets["test"].shuffle(seed=SEED)
 
-    batch_size = 16
     training_args = TrainingArguments(
-        output_dir=save_to + "/lang-xlm-roberta-base",
+        output_dir=save_to + config["model_name"],
         overwrite_output_dir=True,
-        logging_strategy="epoch",
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        save_total_limit=2,
-        num_train_epochs=2,
-        learning_rate=2e-5,
-        weight_decay=0.01,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
+        logging_strategy=config["logging_strategy"],
+        evaluation_strategy=config["evaluation_strategy"],
+        save_strategy=config["save_strategy"],
+        save_total_limit=config["save_total_limit"],
+        num_train_epochs=config["num_train_epochs"],
+        learning_rate=config["learning_rate"],
+        weight_decay=config["weight_decay"],
+        per_device_train_batch_size=config["batch_size"],
+        per_device_eval_batch_size=config["batch_size"],
     )
 
     trainer = Trainer(
@@ -76,7 +92,9 @@ def train(
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        compute_metrics=compute_metrics_multilabel if do_multilabel else compute_metrics,
+        compute_metrics=compute_metrics_multilabel
+        if do_multilabel
+        else compute_metrics,
     )
     trainer.train()
     trainer.save_model()
