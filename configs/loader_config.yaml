@@ -1,0 +1,15 @@
+resources:
+  open_subtitles:
+    de: eu
+    en: eu
+    he: si
+    ka: ro
+  oscar:
+  - be
+  - kk
+  - az
+  - hy
+  tatoeba:
+    ru: en
+    uk: en
+samples_per_lang: 100000
