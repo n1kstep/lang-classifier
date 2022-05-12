@@ -14,3 +14,5 @@ LANGUAGES = [
 ]
 
 SEED = 42
+
+BASE_MODEL = "xlm-roberta-base"
