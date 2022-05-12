@@ -34,7 +34,7 @@
 
 Данные для русского и украинского языков сначала тоже брались из open_subtitles, но потом ресурс был изменен из-за плохого качества данных (в украинском датасете было ~10% русских реплик)
 
-Итого по **100,000 семплов** для каждого языка, но для обучения брали только **10,000 семплов** (из-за сильных ограничений по мощностям)
+Итого по **100,000 семплов** для каждого языка, но для обучения брали только по **10,000 семплов** (из-за сильных ограничений по мощностям)
 
 Задача однозначная, семплы практически всегда однозначно классифицируются - поэтому для обучения достойной модели достаточно несколько тысяч семплов для каждого языка
 
@@ -51,18 +51,25 @@
 
 ### Использование репозитория
 
+Установка зависимостей
+
+`pip install --upgrade pip`
+
+`pip install -r requirements.txt`
+
 Загрузка и сохранение датасетов для дальнейшей обработки (для каждого языка)
 
-`python lang_classifier/preprocessing/data_loader.py`
+`python3 lang_classifier/preprocessing/data_loader.py --save-to datasets`
 
 После загрузки языковых датасетов создаем train и validation датасеты (в зависимости от параметров, single/multi-label)
 
-`python lang_classifier/preprocessing/dataset_builder.py`
+`python3 lang_classifier/preprocessing/dataset_builder.py --save-to datasets --do-multilabel`
 
 Запускаем скрипт обучения модели
 
-`python lang_classifier/model/train.py`
+`python3 lang_classifier/model/train.py --config-path configs/train_config.yaml`
 
 Подаем в скрипт csv файл с текстами, получаем предсказания модели, путь к которой указали
 
-`python lang_classifier/model/predict.py`
+`python3 lang_classifier/model/predict.py --model-path lang_model
+`

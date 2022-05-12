@@ -6,6 +6,7 @@ import random
 import pandas as pd
 import typer
 import yaml
+import os
 from sklearn.model_selection import train_test_split
 
 from lang_classifier.constants.constants import LANGUAGES
@@ -64,16 +65,24 @@ def build_multilabel_dataset(
 @app.command()
 def build_dataset(
     config_path: str = typer.Option(
-        "../configs/builder_config.yaml",
+        "configs/builder_config.yaml",
         help="Path to the config with settings for multilabel dataset building",
     ),
-    data_path: bool = typer.Option(
-        "../datasets", help="Path to directory containing multiclass datasets for different languages"
+    data_path: str = typer.Option(
+        "datasets", help="Path to directory containing multiclass datasets for different languages"
+    ),
+    do_multilabel: bool = typer.Option(
+        False,
+        help="Build multilabel dataset instead of multiclass dataset",
     ),
     save_to: str = typer.Option(
-        "../datasets", help="Path to directory where to save loaded datasets"
+        "datasets", help="Path to directory where to save loaded datasets"
     ),
 ):
+    exists = os.path.exists(save_to)
+    if not exists:
+        os.makedirs(save_to)
+
     with open(config_path, "r", encoding='utf-8') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -91,7 +100,8 @@ def build_dataset(
     typer.secho("Merged multilingual dataset", fg="green")
 
     train, val = train_test_split(merged_df, test_size=config['test_size'], stratify=merged_df["label"])
-    if config['do_multilabel']:
+    if do_multilabel:
+        typer.secho("Please wait, it may take enough time")
         train = build_multilabel_dataset(train,
                                          langs=LANGUAGES,
                                          min_truncate=config['min_truncate'],
@@ -112,3 +122,7 @@ def build_dataset(
     typer.secho(f"Successfully saved train dataset to {save_to}/train.csv", fg="green")
     val.to_csv(f"{save_to}/val.csv", sep="\t", index=False)
     typer.secho(f"Successfully saved val dataset to {save_to}/val.csv", fg="green")
+
+
+if __name__ == "__main__":
+    app()

@@ -6,12 +6,13 @@ from random import sample
 import pandas as pd
 import typer
 import yaml
+import os
 
 from datasets import load_dataset
-from datasets import set_caching_enabled
+import datasets
 from lang_classifier.utils.utils import smart_truncate
 
-set_caching_enabled(False)
+datasets.disable_caching()
 
 app = typer.Typer()
 
@@ -19,13 +20,17 @@ app = typer.Typer()
 @app.command()
 def load_data(
     config_path: str = typer.Option(
-        "../configs/loader_config.yaml",
+        "configs/loader_config.yaml",
         help="Path to the config with data sources and list of languages",
     ),
     save_to: str = typer.Option(
-        "../datasets", help="Path to directory where to save loaded datasets"
+        "datasets", help="Path to directory where to save loaded datasets"
     ),
 ):
+    exists = os.path.exists(save_to)
+    if not exists:
+        os.makedirs(save_to)
+
     with open(config_path, "r", encoding='utf-8') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -38,7 +43,7 @@ def load_data(
             dataset = load_dataset("tatoeba", lang1=translate_from, lang2=lang)
         else:
             typer.secho(f"Loading data for language - {lang}, data resource - Open Subtitles")
-            dataset = load_dataset("open_subtitles", lang1=translate_from, lang2=lang)
+            dataset = load_dataset("open_subtitles", lang1=lang, lang2=translate_from)
 
         sampled_rows = sample(dataset["train"]["translation"], samples_per_lang)
         sampled_df = pd.DataFrame(

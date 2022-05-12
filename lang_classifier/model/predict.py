@@ -8,7 +8,7 @@ import torch
 import typer
 from transformers import (AutoModelForSequenceClassification, AutoTokenizer, Trainer)
 
-from datasets import ClassLabel, load_dataset
+from datasets import load_dataset
 from lang_classifier.constants.constants import LANGUAGES
 
 app = typer.Typer()
@@ -19,17 +19,16 @@ def predict(
     model_path: str = typer.Option(
         None, help="Path to the model config weights",
     ),
-    do_multilabel: str = typer.Option(
+    do_multilabel: bool = typer.Option(
         False, help="Do multilabel instead of multiclass classification"
     ),
     data_path: str = typer.Option(
-        None, help="Path to csv file with samples for model predictions"
+        "datasets", help="Path to csv file with samples for model predictions"
     ),
     save_to: str = typer.Option(
-        None, help="Path to csv file where to save model predictions"
+        "predictions.csv", help="Path to csv file where to save model predictions"
     ),
 ):
-    class_labels = ClassLabel(num_classes=len(LANGUAGES), names=LANGUAGES)
     dataset = load_dataset(
         "csv",
         data_files={"predict": data_path},
@@ -42,24 +41,9 @@ def predict(
         tokens = tokenizer(
             batch["text"], padding="max_length", truncation=True, max_length=128
         )
-        tokens["label"] = class_labels.str2int(batch["label"])
         return tokens
 
-    def tokenize_multilabel(batch):
-        encoding = tokenizer(
-            batch["text"], padding="max_length", truncation=True, max_length=128
-        )
-        labels_batch = {k: batch[k] for k in batch.keys() if k in LANGUAGES}
-        labels_matrix = np.zeros((len(batch["text"]), len(LANGUAGES)))
-        for idx, label in enumerate(LANGUAGES):
-            labels_matrix[:, idx] = labels_batch[label]
-
-        encoding["labels"] = labels_matrix.tolist()
-        return encoding
-
-    tokenized_datasets = dataset.map(
-        tokenize_multilabel if do_multilabel else tokenize, batched=True
-    )
+    tokenized_datasets = dataset.map(tokenize, batched=True)
     predict_dataset = tokenized_datasets["predict"]
 
     trainer = Trainer(

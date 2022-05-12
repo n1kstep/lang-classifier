@@ -5,6 +5,7 @@
 import numpy as np
 import typer
 import yaml
+import datasets
 from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
                           Trainer, TrainingArguments)
 
@@ -13,23 +14,25 @@ from lang_classifier.constants.constants import LANGUAGES, SEED
 from lang_classifier.metrics.metrics import (compute_metrics_multiclass,
                                              compute_metrics_multilabel)
 
+datasets.disable_caching()
+
 app = typer.Typer()
 
 
 @app.command()
 def train(
     config_path: str = typer.Option(
-        "../configs/loader_config.yaml",
+        "configs/loader_config.yaml",
         help="Path to the config with training arguments",
     ),
-    do_multilabel: str = typer.Option(
+    do_multilabel: bool = typer.Option(
         False, help="Do multilabel instead of multiclass classification"
     ),
     data_path: str = typer.Option(
-        None, help="Path to directory where train.csv and val.csv datasets located"
+        "datasets", help="Path to directory where train.csv and val.csv datasets located"
     ),
     save_to: str = typer.Option(
-        None, help="Path to directory where to save loaded datasets"
+        "lang_model", help="Path to directory where to save model configuration and weights"
     ),
 ):
     with open(config_path, "r", encoding='utf-8') as file:
@@ -78,7 +81,7 @@ def train(
     eval_dataset = tokenized_datasets["test"].shuffle(seed=SEED)
 
     training_args = TrainingArguments(
-        output_dir=save_to + config["model_name"],
+        output_dir=save_to+config["model_name"],
         overwrite_output_dir=True,
         logging_strategy=config["logging_strategy"],
         evaluation_strategy=config["evaluation_strategy"],
@@ -90,7 +93,6 @@ def train(
         per_device_train_batch_size=config["batch_size"],
         per_device_eval_batch_size=config["batch_size"],
     )
-
     trainer = Trainer(
         model=model,
         args=training_args,
