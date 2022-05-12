@@ -61,9 +61,13 @@ def predict(
         probs = probs.int().tolist()
         preds_df = pd.DataFrame(data=probs, columns=LANGUAGES)
     else:
-        preds = np.argmax(preds)
+        outputs = np.argmax(preds, axis=1)
+        outputs = outputs.tolist()
+        outputs = [model.config.id2label[ind] for ind in outputs]
+        preds_df = pd.DataFrame(outputs, columns=['label'])
 
     preds_df.to_csv(save_to, sep='\t', index=False)
+    typer.secho(f"Successfully saved file with predictions to {save_to}", fg="green")
 
 
 if __name__ == "__main__":
