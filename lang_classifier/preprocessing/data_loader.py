@@ -8,7 +8,10 @@ import typer
 import yaml
 
 from datasets import load_dataset
+from datasets import set_caching_enabled
 from lang_classifier.utils.utils import smart_truncate
+
+set_caching_enabled(False)
 
 app = typer.Typer()
 
@@ -29,30 +32,33 @@ def load_data(
     resources = config["resources"]
     samples_per_lang = config["samples_per_lang"]
 
-    for key, value in {**resources["tatoeba"], **resources["open_subtitles"]}.items():
-        if key in ('ru', 'uk'):
-            dataset = load_dataset("tatoeba", lang1=value, lang2=key)
+    for lang, translate_from in {**resources["tatoeba"], **resources["open_subtitles"]}.items():
+        if lang in ('ru', 'uk'):
+            typer.secho(f"Loading data for language - {lang}, data resource - Tatoeba")
+            dataset = load_dataset("tatoeba", lang1=translate_from, lang2=lang)
         else:
-            dataset = load_dataset("open_subtitles", lang1=value, lang2=key)
+            typer.secho(f"Loading data for language - {lang}, data resource - Open Subtitles")
+            dataset = load_dataset("open_subtitles", lang1=translate_from, lang2=lang)
 
         sampled_rows = sample(dataset["train"]["translation"], samples_per_lang)
         sampled_df = pd.DataFrame(
-            [{"text": samp[key], "label": key} for samp in sampled_rows]
+            [{"text": samp[lang], "label": lang} for samp in sampled_rows]
         )
-        sampled_df.to_csv(f"{save_to}/dataset_{key}.csv", sep="\t", index=False)
+        sampled_df.to_csv(f"{save_to}/dataset_{lang}.csv", sep="\t", index=False)
 
-        typer.secho(f"Successfully saved file dataset_{key}.csv", fg="green")
+        typer.secho(f"Successfully saved file dataset_{lang}.csv", fg="green")
 
-    for key in resources["oscar"]:
-        dataset = load_dataset("oscar", f"unshuffled_deduplicated_{key}")
+    for lang in resources["oscar"]:
+        typer.secho(f"Loading data for language - {lang}, data resource - Oscar")
+        dataset = load_dataset("oscar", f"unshuffled_deduplicated_{lang}")
 
         sampled_rows = sample(dataset["train"]["text"], samples_per_lang)
         sampled_df = pd.DataFrame(
-            [{"text": smart_truncate(samp), "label": key} for samp in sampled_rows]
+            [{"text": smart_truncate(samp), "label": lang} for samp in sampled_rows]
         )
-        sampled_df.to_csv(f"{save_to}/dataset_{key}.csv", sep="\t", index=False)
+        sampled_df.to_csv(f"{save_to}/dataset_{lang}.csv", sep="\t", index=False)
 
-        typer.secho(f"Successfully saved file dataset_{key}.csv", fg="green")
+        typer.secho(f"Successfully saved file dataset_{lang}.csv", fg="green")
 
 
 if __name__ == "__main__":

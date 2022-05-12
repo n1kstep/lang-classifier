@@ -10,7 +10,7 @@ from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
 
 from datasets import ClassLabel, load_dataset
 from lang_classifier.constants.constants import LANGUAGES, SEED
-from lang_classifier.metrics.metrics import (compute_metrics,
+from lang_classifier.metrics.metrics import (compute_metrics_multiclass,
                                              compute_metrics_multilabel)
 
 app = typer.Typer()
@@ -98,7 +98,7 @@ def train(
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics_multilabel
         if do_multilabel
-        else compute_metrics,
+        else compute_metrics_multiclass,
     )
     trainer.train()
     trainer.save_model()

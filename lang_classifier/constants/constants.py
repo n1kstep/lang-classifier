@@ -15,4 +15,6 @@ LANGUAGES = [
 
 SEED = 42
 
+PATTERN = "[\s.,;]+"  # split text, remove punctuation
+
 BASE_MODEL = "xlm-roberta-base"

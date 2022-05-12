@@ -75,9 +75,11 @@ def predict(
         probs[probs > 0.5] = 1
         probs[probs <= 0.5] = 0
         probs = probs.int().tolist()
-
         preds_df = pd.DataFrame(data=probs, columns=LANGUAGES)
-        preds_df.to_csv(save_to, sep='\t', index=False)
+    else:
+        preds = np.argmax(preds)
+
+    preds_df.to_csv(save_to, sep='\t', index=False)
 
 
 if __name__ == "__main__":
