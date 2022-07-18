@@ -15,6 +15,31 @@ LANGUAGES = [
 
 SEED = 42
 
-PATTERN = "[\s.,;]+"  # split text, remove punctuation
+PATTERN = r"[\s.,;]+"  # split text, remove punctuation
 
 BASE_MODEL = "xlm-roberta-base"
+
+DROP_COLS = ['Epoch', 'Training Loss', 'Validation Loss']
+
+NEW_ROWS = [
+    'az',
+    'be',
+    'de',
+    'en',
+    'he',
+    'hy',
+    'ka',
+    'kk',
+    'macro_avg',
+    'ru',
+    'uk',
+    'weighted avg',
+]
+
+NEW_COLS = [
+    'class',
+    'f1-score',
+    'precision',
+    'recall',
+    'support',
+]
